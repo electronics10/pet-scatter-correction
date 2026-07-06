@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import mcgpu_pet_wrapper as mpw
 
@@ -44,6 +45,7 @@ def _run_epoch(model, loader, loss_fn, device, opt=None):
     model.train(train)
     total, n = 0.0, 0
     torch.set_grad_enabled(train)
+    loader = tqdm(loader, desc="train" if train else "val", leave=False)
     for window, d_norm, label, _scale in loader:
         window = window.to(device, non_blocking=True)
         d_norm = d_norm.to(device, non_blocking=True)
@@ -54,8 +56,9 @@ def _run_epoch(model, loader, loss_fn, device, opt=None):
             opt.zero_grad(set_to_none=True)
             loss.backward()
             opt.step()
-        total += float(loss) * window.shape[0]
+        total += loss.item() * window.shape[0]
         n += window.shape[0]
+        loader.set_postfix(loss=loss.item())   # live loss per batch
     return total / max(n, 1)
 
 
@@ -80,6 +83,8 @@ def main():
     ap.add_argument("--num_workers", type=int, default=0)
     ap.add_argument("--limit_train_runs", type=int, default=0,
                     help="use only the first N train runs (pilot/learning-curve)")
+    ap.add_argument("--limit_val_runs", type=int, default=0)
+    ap.add_argument("--limit_test_runs", type=int, default=0)
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 

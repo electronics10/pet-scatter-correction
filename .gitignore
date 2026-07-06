@@ -1,2 +1,22 @@
+# Python build / install artifacts
+*.egg-info/
+__pycache__/
+*.pyc
+build/
+dist/
+
+# venv
+.venv/
+.pixi/
+
+# editor / OS cruft
+.vscode/
+.idea/
+.DS_Store
+
+# simulation run outputs (data, not code) -- adjust if you keep some
 data*/
 recon_img/
+*.raw.gz
+*.psf
+MCGPU-PET.out

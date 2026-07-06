@@ -66,11 +66,10 @@ class UNet2p5D(nn.Module):
         self.out = nn.Conv2d(base, 1, 1)
 
     def forward(self, window, d_norm):
-        """window: (B, k, A, R). d_norm: (B,) in [0,1]. Returns (B, 1, A, R) >= 0."""
-        B, k, A, R = window.shape
+        B, k, A, R = window.shape                 # R = 193
         d_chan = d_norm.view(B, 1, 1, 1).expand(B, 1, A, R)
-        x = torch.cat([window, d_chan], dim=1)          # (B, k+1, A, R)
-        x, (h0, w0) = _pad_to(x, 16)
+        x = torch.cat([window, d_chan], dim=1)    # (B, k+1, 160, 193)
+        x = x[..., :192]                          # -> 160x192 = 16*10 x 16*12
 
         c1 = self.d1(x)
         c2 = self.d2(self.pool(c1))
@@ -80,5 +79,5 @@ class UNet2p5D(nn.Module):
         x = self.u2(torch.cat([self.up2(x), c2], 1))
         x = self.u1(torch.cat([self.up1(x), c1], 1))
         x = self.out(x)
-        x = x[..., :h0, :w0]                            # crop back to (A, R)
+        x = F.pad(x, (0, 1))                       # restore column -> 193, copy-safe
         return F.softplus(x)
