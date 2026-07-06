@@ -1,0 +1,22 @@
+[workspace]
+authors = ["electronics10 <electronicstenio@gmail.com>"]
+channels = ["conda-forge"]
+name = "pet-scatter-correction"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.12.*"
+parallelproj = ">=1.10.2,<2"
+cupy = ">=14.1.1,<15"
+cuda-version = "12.*"
+matplotlib = ">=3.11.0,<4"
+
+[system-requirements]
+cuda = "12"
+
+[pypi-dependencies]
+pet-sim-gen = { git = "https://github.com/electronics10/pet-sim-gen.git" }
+mcgpu-recon = { git = "https://github.com/electronics10/mcgpu-recon.git" }
