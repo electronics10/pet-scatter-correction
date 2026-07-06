@@ -18,20 +18,23 @@ End-to-end: merged `(z̄, d)` representation → 2.5D U-Net → predicted scatte
   output (non-negative).
 - `losses.py` — `mse` (default) and `poisson_nll` (both Bregman → conditional-mean
   minimizer).
-- `train.py` — training CLI; run-level split; checkpoints `best.pt`/`last.pt`.
+- `engine.py` — the training loop, in one place: `run_epoch` (one pass) and `fit`
+  (a full training job: build model, loop epochs, checkpoint `best.pt`/`last.pt`).
 - `predict.py` — recon API: run → predicted scatter in mlem-ready ordered order.
 
 ## First run (settled defaults: L2, non-split, k=5)
 
-```bash
-# pilot / learning-curve point: limit train runs, cheap
-python -m scatter_ml.train --run_root ../MCGPU_data/runs \
-    --epochs 20 --limit_train_runs 200
+Training is driven by a flag-free script, `run_pilot.py` (one level up from this
+package). Edit its CONSTANTS / HP block and run:
 
-# ablations (one switch each)
-python -m scatter_ml.train --run_root ... --loss poisson
-python -m scatter_ml.train --run_root ... --split          # independent labels
+```bash
+python run_pilot.py
 ```
+
+`run_pilot.py` owns policy (which runs, split ratio, hyper-params) and calls
+`scatter_ml.engine.fit`, which owns the training loop. For ablations, edit the HP
+dict: `"loss": "poisson"` or `"split": True`. To programmatically drive training
+instead, call `fit(train_runs, val_runs, cfg, hp, out_dir)` directly.
 
 ## Evaluate a trained model against floor / oracle
 
@@ -40,7 +43,7 @@ import mcgpu_pet_wrapper as mpw
 from eval_harness import evaluate            # scoring fix still pending, see note
 from scatter_ml.predict import predict_scatter_from_ckpt
 
-run_dir = "../MCGPU_data/runs/run_00003"
+run_dir = "../data-gen/data/runs/run_00003"
 cfg = mpw.load_config(run_dir + "/config.json")
 pred = predict_scatter_from_ckpt(run_dir, "checkpoints/best.pt", cfg)  # (P,A,R)
 res = evaluate(run_dir, cfg, extra_arms={"model": pred})
