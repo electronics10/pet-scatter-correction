@@ -48,7 +48,26 @@ import mcgpu_pet_wrapper as mpw
 from mcgpu_pet_wrapper.config import voxel_space_shape_zyx, grid_size_mm
 
 # reconstruction lives in mcgpu-recon
-from mcgpu_recon import MCGPUProjector, mlem
+from mcgpu_recon import from_run, mlem
+
+# ---- array backend -------------------------------------------------------
+# Projection is the heavy, embarrassingly-parallel work -> run it on the GPU.
+# Metrics (masks, means, least-squares) are light + irregular -> run in numpy on
+# the host. The two meet at exactly one hand-off: _to_numpy(), right after mlem.
+#
+# GPU (recommended -- everything stays on the device):
+import array_api_compat.cupy as xp
+XP_KW = dict(xp=xp, plane_chunk=256)
+# CPU fallback (no cupy/CUDA): comment the two lines above and uncomment these.
+# import numpy as xp
+# XP_KW = dict(xp=xp, plane_chunk=256, num_chunks=8)
+
+
+def _to_numpy(a):
+    """Move a reconstruction to a host numpy array (identity if already numpy)."""
+    if xp is np:
+        return np.asarray(a)
+    return xp.asnumpy(a) if hasattr(xp, "asnumpy") else np.asarray(a.get())
 
 
 CORE_SHRINK = 0.6   # linear shrink of each object to its edge-free core
@@ -59,21 +78,20 @@ HOT_RATIO = 1.2     # object is "hot" if true mean > HOT_RATIO * reference mean
 # 1. reconstruction arms
 # ---------------------------------------------------------------------------
 def _load_input(run_dir, cfg):
-    """Return (prompts, true_scatter, A) all in one aligned plane order.
+    """Return (prompts, true_scatter, A) as ON-DEVICE arrays in one plane order.
 
     prompts = trues + scatter is the measured sinogram every arm reconstructs;
-    true_scatter is the oracle's contamination. Reading trues and scatter through
-    the same read_sinogram_ring_pairs call guarantees identical plane order, and
-    A is built from that call's ring labels so its bins match by construction.
+    true_scatter is the oracle's contamination. Both from_run calls share the
+    same read_sinogram_ring_pairs plane order, and A is built from the trues call
+    so its bins match by construction. XP_KW puts A and the sinograms on the GPU.
     """
-    y_t, r1, r2 = mpw.read_sinogram_ring_pairs(run_dir, cfg, scatter=False)
-    y_s, _, _ = mpw.read_sinogram_ring_pairs(run_dir, cfg, scatter=True)
-    A = MCGPUProjector(cfg, r1, r2)
-    prompts = (y_t + y_s).astype("float32")
-    return prompts, y_s.astype("float32"), A
+    y_t, A = from_run(run_dir, cfg, **XP_KW)                 # trues + projector
+    y_s, _ = from_run(run_dir, cfg, scatter=True, **XP_KW)   # scatter, same order
+    prompts = xp.asarray(y_t + y_s)
+    return prompts, xp.asarray(y_s), A
 
 
-def reconstruct_arms(run_dir, cfg, extra_arms=None, n_iter=30):
+def reconstruct_arms(run_dir, cfg, extra_arms=None, n_iter=20):
     """Reconstruct the floor and oracle arms (plus any extra scatter estimates).
 
     extra_arms : optional dict name -> scatter_sinogram (same shape as prompts),
@@ -83,10 +101,14 @@ def reconstruct_arms(run_dir, cfg, extra_arms=None, n_iter=30):
     prompts, true_scatter, A = _load_input(run_dir, cfg)
     arms = {"floor": None, "oracle": true_scatter}
     if extra_arms:
-        arms.update(extra_arms)
+        # a passed-in estimate (e.g. a model prediction) may be a host array;
+        # move it onto the same device as the projector before use.
+        arms.update({k: (None if v is None else A.xp.asarray(v))
+                     for k, v in extra_arms.items()})
     recons = {}
     for name, contam in arms.items():
-        recons[name] = mlem(A, prompts, n_iter=n_iter, contamination=contam)
+        x = mlem(A, prompts, n_iter=n_iter, contamination=contam, verbose=True)
+        recons[name] = _to_numpy(x)          # single GPU->host hand-off
     return recons
 
 
@@ -212,7 +234,7 @@ def score(recon, truth, labels, volumes):
 # ---------------------------------------------------------------------------
 # 4. top-level: evaluate one run across all arms
 # ---------------------------------------------------------------------------
-def evaluate(run_dir, cfg=None, extra_arms=None, n_iter=30):
+def evaluate(run_dir, cfg=None, extra_arms=None, n_iter=20):
     """Reconstruct floor + oracle (+ extras) for one run and score each.
 
     Returns dict arm_name -> metrics dict. The floor/oracle pair brackets the
@@ -246,7 +268,7 @@ def gap_closed(results, metric="crc_mean"):
 if __name__ == "__main__":
     import sys
 
-    run_dirs = sys.argv[1:] or ["data/runs/run_00000"]
+    run_dirs = sys.argv[1:] or ["../MCGPU_data/runs/run_00009"]
     for rd in run_dirs:
         print(f"\n=== {rd} ===")
         res = evaluate(rd)
