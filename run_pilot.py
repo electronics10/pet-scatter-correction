@@ -38,7 +38,7 @@ HP = {                   # hyper-parameters handed to engine.fit
     "lr": 1e-3,
     "window_k": 5,
     "base": 32,
-    "loss": "mse",       # "mse" or "poisson"
+    "loss": "poisson",       # "mse" or "poisson"
     "split": False,      # independent-label Poisson split (off first)
     "split_p": 0.5,
     "cache_capacity": 8, # runs held in RAM; higher = less re-read per epoch
