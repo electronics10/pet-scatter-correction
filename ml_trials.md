@@ -1,4 +1,5 @@
 ## trial1 (20260706)
+
 ```Python
 """
 run_pilot.py -- flag-free pilot training. Edit the CONSTANTS, then:
@@ -90,7 +91,7 @@ if __name__ == "__main__":
     main()
 ```
 
-Results
+**Results**
 
 reusing frozen split: checkpoints_pilot/split.json
 runs: train=50 val=10 test=10
@@ -110,3 +111,98 @@ epoch  13/15  train=7.5305  val=613.03
 epoch  14/15  train=6.7544  val=63.233 
 epoch  15/15  train=8.0414  val=140.77
 done. best val = 1.2877 -> checkpoints_pilot/best.pt
+
+**Analysis**
+
+```bash
+window mean (raw counts) percentiles:
+     0.0%  1e-06
+     0.1%  1e-06
+     1.0%  1e-06
+     5.0%  5.217e-05
+    50.0%  4.735
+    95.0%  28.49
+   100.0%  33.41
+
+samples below candidate floors (as fraction of median window mean):
+  < 0.001*median (=0.004735): 82  (8.63%)
+  < 0.01*median (=0.04735): 145  (15.26%)
+  < 0.05*median (=0.2367): 197  (20.74%)
+  < 0.1*median (=0.4735): 223  (23.47%)
+
+scaled-label max (label/scale) percentiles -- the exploding quantity:
+    50.0%  1.635
+    95.0%  224.7
+    99.0%  4956
+    99.9%  4.895e+04
+   100.0%  4.895e+04
+
+ratio  max / median  of scaled-label-max = 2.994e+04   (huge => outlier-driven val loss)
+```
+
+The diagnosis is confirmed, and the numbers give exact thresholds. Reading them against the prediction:
+
+- **Window-mean low tail:** the 0th–1st percentile is `1e-6` — i.e. exactly `eps`, meaning those windows are *literally empty* (`window.mean() = 0`, so `scale = eps`). At least 1% of samples are empty planes. Prediction confirmed.
+- **Scaled-label max:** median `1.6`, but 99th percentile `4956` and max `4.9e4` — the `max/median` ratio is `3e4`. The loss is squared, so those samples contribute ~`(4.9e4)² ≈ 2.4e9` versus a median contribution of ~`2.7`. A single empty plane outweighs a *billion* normal samples. That is the entire val-loss thrashing. Prediction confirmed, decisively.
+
+**One thing the numbers add that I underweighted:** this isn't a rare handful. **8.6% of samples fall below 0.1% of the median**, and 23% below 10%. Empty/near-empty planes are a *large* fraction — expected, since high-`d` (very oblique) segments have few rings and the axial-edge planes there carry almost no counts. So the fix isn't just "clip a few outliers"; it's "a quarter of your samples are low-signal, and the scaling makes the emptiest ones explode."
+
+This reframes the two fixes — both are now clearly justified, and they do *different* jobs:
+
+**Fix 1 — scale floor (stops the explosion).** Replace `scale = window.mean() + eps` with `scale = max(window.mean(), FLOOR)`. From the percentiles, the median window mean is `4.7`; a floor around `0.05`–`0.24` (1–5% of median) caps the denominator so an empty plane's label can't inflate past ~(true counts)/FLOOR. This keeps empty planes in the dataset but harmless.
+
+**Fix 2 — drop near-empty planes (removes wasted samples).** Skip samples whose window mean is below a threshold at index-build time. Justification from the data: a plane with `<1%` of median counts carries almost no scatter to learn, so it's noise injection, not signal. Dropping the `~15%` below `0.01×median` also shrinks every epoch by ~15% — free speed.
+
+They're complementary, not redundant: Fix 2 removes the *truly* empty planes (no signal); Fix 1 protects against the *semi*-empty ones that survive the cut but still have small denominators. Stress-test of "just floor it": flooring alone leaves 15–23% of training samples as near-empty low-signal planes that the model wastes capacity on and that still dominate gradients occasionally; dropping alone still lets a plane just above the drop threshold explode. Under the hypothesis that scatter is only worth learning where there are counts to predict, you want both — a hard cut for the empty, a soft floor for the rest.
+
+Here are the two edits to `dataset.py`. First, the scale floor in `__getitem__`:
+
+```python
+# in SinogramWindowDataset.__init__, add a param:
+def __init__(self, run_dirs, config, window_k=5, split=False, split_p=0.5,
+             cache_capacity=2, eps=1e-6, scale_floor=0.05, min_window_mean=0.05,
+             seed=0):
+    ...
+    self.scale_floor = scale_floor
+    self.min_window_mean = min_window_mean
+```
+
+```python
+# in __getitem__, replace the scale line:
+scale = max(float(window.mean()), self.scale_floor)   # was: window.mean() + eps
+```
+
+Second, the empty-plane skip. This is subtler because the sample index is built in `__init__` *before* any data is loaded, so you can't test window means there without loading runs. Two options:
+
+- **Cheap/approximate:** skip by geometry — drop the axial-edge positions of high-`d` segments, which are the empty ones, without loading data. But that hard-codes an assumption about *where* empties are.
+- **Correct/data-driven:** filter at first access. Keep the full index, but in `__getitem__` return a sentinel for sub-threshold samples and filter in a custom `collate_fn` — messy with the batch sampler.
+
+Given the batch sampler, the clean approach is a **one-time pre-scan** that records each sample's window mean (the diagnostic already computes this), then drops sub-threshold entries from `self.index`. It costs one pass but makes every epoch faster and cleaner.
+
+Before I write the pre-scan version: is a one-time pre-scan at dataset construction acceptable (adds ~30 s at startup, given the speed we just saw), or do you prefer the zero-cost geometric skip that assumes empties are the high-`d` axial edges? The data-driven pre-scan is safer; the geometric one is instant but assumption-laden. Which do you want?
+
+## trial2 (20260707)
+
+```Python
+RUN_ROOT = "../MCGPU_data/runs"
+OUT      = "checkpoints_pilot"
+N_RUNS   = 70            # total runs to use, split by ratio below
+VAL_FRAC = 0.15
+TEST_FRAC = 0.15
+SEED     = 0
+
+HP = {                   # hyper-parameters handed to engine.fit
+    "epochs": 25,
+    "batch_size": 16,
+    "lr": 5e-4,
+    "window_k": 7,
+    "base": 48,
+    "loss": "poisson",       # "mse" or "poisson"
+    "split": True,      # independent-label Poisson split (off first)
+    "split_p": 0.5,
+    "cache_capacity": 8, # runs held in RAM; higher = less re-read per epoch
+    "num_workers": 4,
+    "seed": SEED,
+}
+```
+An aggressive modification. If it works I won't know why, and if it fails I won't know which knob to blame

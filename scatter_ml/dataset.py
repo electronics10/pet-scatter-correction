@@ -73,7 +73,8 @@ class SinogramWindowDataset(Dataset):
     """2.5D windows over a list of runs sharing one config/geometry."""
 
     def __init__(self, run_dirs, config, window_k=5, split=False, split_p=0.5,
-                 cache_capacity=2, eps=1e-6, seed=0):
+                 cache_capacity=2, eps=1e-6, scale_floor=0.05, min_window_mean=0.05,
+                 seed=0):
         assert window_k % 2 == 1, "window_k must be odd"
         self.run_dirs = [Path(r) for r in run_dirs]
         self.config = config
@@ -85,6 +86,8 @@ class SinogramWindowDataset(Dataset):
         self.geom = build_geometry(config)
         self.cache = MergedRunCache(self.geom, capacity=cache_capacity)
         self._rng = np.random.default_rng(seed)
+        self.scale_floor = scale_floor
+        self.min_window_mean = min_window_mean
 
         # sample index: (run_id, d, j) where j is position within segment d
         self.index = []
@@ -128,7 +131,7 @@ class SinogramWindowDataset(Dataset):
             window = t_win + s_win                      # full prompts input
             label = s_m[center]
 
-        scale = float(window.mean()) + self.eps         # per-sample brightness
+        scale = max(float(window.mean()), self.scale_floor)   # was: window.mean() + eps
         window = window / scale
         label = label / scale
 

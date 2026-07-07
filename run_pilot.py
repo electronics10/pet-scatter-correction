@@ -33,13 +33,13 @@ TEST_FRAC = 0.15
 SEED     = 0
 
 HP = {                   # hyper-parameters handed to engine.fit
-    "epochs": 15,
+    "epochs": 25,
     "batch_size": 16,
-    "lr": 1e-3,
-    "window_k": 5,
-    "base": 32,
+    "lr": 5e-4,
+    "window_k": 7,
+    "base": 48,
     "loss": "poisson",       # "mse" or "poisson"
-    "split": False,      # independent-label Poisson split (off first)
+    "split": True,      # independent-label Poisson split (off first)
     "split_p": 0.5,
     "cache_capacity": 8, # runs held in RAM; higher = less re-read per epoch
     "num_workers": 4,
