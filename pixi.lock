@@ -212,7 +212,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/cuda-pathfinder-1.5.6-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/cuda-version-12.9-h4f385c5_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/cycler-0.12.1-pyhcf101f3_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/filelock-3.29.6-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/filelock-3.29.7-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/font-ttf-dejavu-sans-mono-2.37-hab24e00_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/font-ttf-inconsolata-3.000-h77eed37_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/font-ttf-source-code-pro-2.038-h77eed37_0.tar.bz2
@@ -243,7 +243,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2025c-hc9c84f9_1.conda
       - pypi: git+https://github.com/electronics10/mcgpu-pet-wrapper#211fed5b3d29644aa6df125d3466840f3dc3b0fd
-      - pypi: git+https://github.com/electronics10/mcgpu-recon#e5819531d033c4f20326442efeef36c52379fbc7
+      - pypi: git+https://github.com/electronics10/mcgpu-recon#a2b68fbbd9270e21437d238c4c8f2ebcfc8f1024
       - pypi: git+https://github.com/electronics10/pet-sim-gen#9a85a5e9bc43357be38f161659f8fa1578cf1c3f
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -2632,7 +2632,7 @@ packages:
   - libwebp-base >=1.6.0,<2.0a0
   license: HPND
   purls:
-  - pkg:pypi/pillow?source=compressed-mapping
+  - pkg:pypi/pillow?source=hash-mapping
   run_exports: {}
   size: 1064129
   timestamp: 1782912080163
@@ -3646,17 +3646,17 @@ packages:
   run_exports: {}
   size: 14778
   timestamp: 1764466758386
-- conda: https://conda.anaconda.org/conda-forge/noarch/filelock-3.29.6-pyhd8ed1ab_0.conda
-  sha256: 030c4daf3a7686d47393e8bc851b0b1bca8560bdf1c285a626cc5216ed128be6
-  md5: 374f68c78b1e704c004cdba2c75e9732
+- conda: https://conda.anaconda.org/conda-forge/noarch/filelock-3.29.7-pyhd8ed1ab_0.conda
+  sha256: ad1596682d1c7c562d6f02ca7aad9ef8e47c333a253c402d81ba51a9ff4fd454
+  md5: ee29c64d6fc4ab42e47c4a59b756d958
   depends:
   - python >=3.10
   license: Unlicense
   purls:
   - pkg:pypi/filelock?source=compressed-mapping
   run_exports: {}
-  size: 39298
-  timestamp: 1783395936589
+  size: 39652
+  timestamp: 1783505066242
 - conda: https://conda.anaconda.org/conda-forge/noarch/font-ttf-dejavu-sans-mono-2.37-hab24e00_0.tar.bz2
   sha256: 58d7f40d2940dd0a8aa28651239adbf5613254df0f75789919c4e6762054403b
   md5: 0c96522c6bdaed4b1566d11387caaf45
@@ -4036,7 +4036,7 @@ packages:
   requires_dist:
   - numpy>=1.24
   requires_python: '>=3.10'
-- pypi: git+https://github.com/electronics10/mcgpu-recon#e5819531d033c4f20326442efeef36c52379fbc7
+- pypi: git+https://github.com/electronics10/mcgpu-recon#a2b68fbbd9270e21437d238c4c8f2ebcfc8f1024
   name: mcgpu-recon
   version: 0.1.0
   requires_dist:

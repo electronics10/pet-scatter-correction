@@ -206,3 +206,18 @@ HP = {                   # hyper-parameters handed to engine.fit
 }
 ```
 An aggressive modification. If it works I won't know why, and if it fails I won't know which knob to blame
+
+*Result* (1~15 lost)
+epoch  16/25  train=0.39264  val=0.40629                                                 
+epoch  17/25  train=0.39227  val=0.3981
+epoch  18/25  train=0.39215  val=0.47007
+epoch  19/25  train=0.39197  val=0.40621
+epoch  20/25  train=0.39187  val=0.38614
+epoch  21/25  train=0.39183  val=0.38871
+epoch  22/25  train=0.39177  val=0.39876
+epoch  23/25  train=0.39169  val=0.50319
+epoch  24/25  train=0.39161  val=0.38533
+epoch  25/25  train=0.39168  val=0.38531
+done. best val = 0.38531 -> checkpoints_pilot/best.pt
+
+The performance is ok.

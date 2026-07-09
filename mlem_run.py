@@ -12,7 +12,7 @@ from scatter_ml.predict import predict_scatter_from_ckpt
 XP_KW = dict(xp=xp, plane_chunk=256)
 num = "00149"
 run_dir = Path("../MCGPU_data/runs/run_" + num)
-ckpt = "checkpoints_pilot/trial1_20260706/best.pt"
+ckpt = "checkpoints_pilot/best.pt"
 cfg = mpw.load_config(run_dir / "config.json")
 NIT, FLOOR = 23, 0.07
 
