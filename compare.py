@@ -14,7 +14,7 @@ from mcgpu_sss import to_host
 
 ckpt = "checkpoints_pilot/trial2/best.pt"
 XP_KW = dict(xp=xp, plane_chunk=256)
-run_dir = Path("data/run_0")
+run_dir = Path("../MCGPU_data/runs/run_00149")
 cfg = mpw.load_config(run_dir / "config.json")
 plot3Dimage(mpw.read_emission_image(run_dir, cfg), run_dir/"recon_img/emission.png", "Emission")
 
@@ -64,7 +64,7 @@ plot3Dimage(xp.asnumpy(x),     run_dir/"recon_img/mlem_tonly.png", "MLEM trues o
 plot3Dimage(xp.asnumpy(x_tot), run_dir/"recon_img/mlem_tot.png",  f"MLEM total, SF={sf*100:.2f}% (uncorrected)")
 plot3Dimage(xp.asnumpy(x_gt),  run_dir/"recon_img/mlem_gt.png",    "MLEM ground truth (corrected with known scatter)")
 plot3Dimage(xp.asnumpy(x_ml),  run_dir/"recon_img/mlem_ml.png",    "MLEM model (corrected with model estimated scatter)")
-plot3Dimage(xp.asnumpy(x_ml),  run_dir/"recon_img/mlem_sss.png",   "MLEM model (corrected with SSS estimated scatter)")
+plot3Dimage(xp.asnumpy(x_sss),  run_dir/"recon_img/mlem_sss.png",   "MLEM model (corrected with SSS estimated scatter)")
 
 # --- residual images ------------------------------------------
 x_gt_m, _ = scale_match(x, x_gt)
