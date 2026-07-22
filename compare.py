@@ -81,12 +81,30 @@ df = float(xp.linalg.norm(x_sss - x_gt) / xp.linalg.norm(x_gt))
 plot3Dimage(xp.asnumpy(x_sss - x_gt), run_dir/"recon_img/residual_sss.png", f"sss - gt, diff={df*100:.2f}%")
 
 # --- quantitative metrics --------------------------------------
+import csv, json
+
 bbox = object_bbox(np.asarray(vg.activity) > 0)
 
+results = {}
+for name, x in [("floor", x_tot), ("model", x_ml), ("sss", x_sss)]:
+    results[name] = evaluate_recon(xp.asnumpy(x), xp.asnumpy(x_gt), bbox=bbox)
+
+# print
 print(f"{'arm':8s} {'PSNR':>7s} {'SSIM':>7s}")
-m = evaluate_recon(xp.asnumpy(x_tot), xp.asnumpy(x_gt), bbox=bbox)
-print(f"{"floor":8s} {m['psnr']:7.2f} {m['ssim']:7.3f}")
-m = evaluate_recon(xp.asnumpy(x_ml), xp.asnumpy(x_gt), bbox=bbox)
-print(f"{"model":8s} {m['psnr']:7.2f} {m['ssim']:7.3f}")
-m = evaluate_recon(xp.asnumpy(x_sss), xp.asnumpy(x_gt), bbox=bbox)
-print(f"{"sss":8s} {m['psnr']:7.2f} {m['ssim']:7.3f}")
+for name, m in results.items():
+    print(f"{name:8s} {m['psnr']:7.2f} {m['ssim']:7.3f}")
+
+# save
+out_dir = run_dir / "recon_img"
+out_dir.mkdir(parents=True, exist_ok=True)
+
+with open(out_dir / "metrics.csv", "w", newline="") as f:
+    w = csv.writer(f)
+    w.writerow(["arm", "psnr", "ssim"])
+    for name, m in results.items():
+        w.writerow([name, f"{m['psnr']:.4f}", f"{m['ssim']:.6f}"])
+
+with open(out_dir / "info.json", "w") as f:
+    json.dump({"run_dir": str(run_dir), 
+               "scatter fraction": sf,
+               "metrics": results}, f, indent=2)
