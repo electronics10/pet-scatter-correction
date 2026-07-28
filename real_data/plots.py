@@ -48,23 +48,24 @@ def _draw_box(ax, j_range, i_range, color, label=None):
 
 def roi_overlay(activity: np.ndarray, hot, cold, out_path,
                 title: str = "ROI placement"):
-    """Save an axial montage with ROI boxes drawn on top."""
+    """Save an axial montage with ROI boxes drawn on top. Grayscale + colorbar."""
     k_hot, jh, ih = _roi_extent(hot)
     k_cold, jc, ic = _roi_extent(cold)
 
-    fig, axes = plt.subplots(1, 2, figsize=(9, 4.5))
-    axes[0].imshow(activity[k_hot], origin="lower", cmap="hot")
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    im0 = axes[0].imshow(activity[k_hot], origin="lower", cmap="gray")
     axes[0].set_title(f"axial k={k_hot} (hot slab)")
     _draw_box(axes[0], jh, ih, "cyan", "hot")
+    fig.colorbar(im0, ax=axes[0], fraction=0.046, pad=0.04)
 
-    axes[1].imshow(activity[k_cold], origin="lower", cmap="hot")
+    im1 = axes[1].imshow(activity[k_cold], origin="lower", cmap="gray")
     axes[1].set_title(f"axial k={k_cold} (cold slab)")
     _draw_box(axes[1], jc, ic, "cyan", "cold")
+    fig.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
 
     fig.suptitle(title)
-    plt.tight_layout()
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(out_path, dpi=110)
+    plt.savefig(out_path, dpi=110, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -85,26 +86,32 @@ def recon_comparison(x_floor: np.ndarray, x_model: np.ndarray,
     vmax_hot = float(max(x_floor[k_hot].max(), x_model[k_hot].max()))
     vmax_cold = float(max(x_floor[k_cold].max(), x_model[k_cold].max()))
 
-    fig, axes = plt.subplots(3, 2, figsize=(9, 12))
+    fig, axes = plt.subplots(3, 2, figsize=(10, 13))
     for row, k, jr, ir, vmax, lbl in [
         (0, k_hot, jh, ih, vmax_hot, "hot"),
         (1, k_cold, jc, ic, vmax_cold, "cold"),
     ]:
-        axes[row, 0].imshow(x_floor[k], origin="lower", cmap="hot",
+        # floor + model share the same colorbar per row so they are directly
+        # comparable by eye. Colorbar attached to the RIGHT panel to save space.
+        axes[row, 0].imshow(x_floor[k], origin="lower", cmap="gray",
                             vmin=0, vmax=vmax)
         axes[row, 0].set_title(f"floor  k={k} ({lbl})")
         _draw_box(axes[row, 0], jr, ir, "cyan", lbl)
-        axes[row, 1].imshow(x_model[k], origin="lower", cmap="hot",
-                            vmin=0, vmax=vmax)
+        im = axes[row, 1].imshow(x_model[k], origin="lower", cmap="gray",
+                                 vmin=0, vmax=vmax)
         axes[row, 1].set_title(f"model  k={k} ({lbl})")
         _draw_box(axes[row, 1], jr, ir, "cyan", lbl)
+        fig.colorbar(im, ax=axes[row, :].ravel().tolist(),
+                     fraction=0.03, pad=0.02, label="activity (a.u.)")
 
-    axes[2, 0].imshow(diff[k_hot], origin="lower", cmap="bwr",
-                      vmin=-vmax_diff, vmax=vmax_diff)
+    im2a = axes[2, 0].imshow(diff[k_hot], origin="lower", cmap="bwr",
+                             vmin=-vmax_diff, vmax=vmax_diff)
     axes[2, 0].set_title(f"model - floor  k={k_hot}")
-    axes[2, 1].imshow(diff[k_cold], origin="lower", cmap="bwr",
-                      vmin=-vmax_diff, vmax=vmax_diff)
+    im2b = axes[2, 1].imshow(diff[k_cold], origin="lower", cmap="bwr",
+                             vmin=-vmax_diff, vmax=vmax_diff)
     axes[2, 1].set_title(f"model - floor  k={k_cold}")
+    fig.colorbar(im2b, ax=axes[2, :].ravel().tolist(),
+                 fraction=0.03, pad=0.02, label="model - floor")
 
     subtitle = title
     if cnr_floor is not None and cnr_model is not None:
@@ -112,7 +119,6 @@ def recon_comparison(x_floor: np.ndarray, x_model: np.ndarray,
                      f"CNR model = {cnr_model:.3g},  "
                      f"delta = {cnr_model - cnr_floor:+.3g}")
     fig.suptitle(subtitle)
-    plt.tight_layout()
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(out_path, dpi=110)
+    plt.savefig(out_path, dpi=110, bbox_inches="tight")
     plt.close(fig)
