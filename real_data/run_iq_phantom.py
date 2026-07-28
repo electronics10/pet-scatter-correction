@@ -1,5 +1,5 @@
 """
-run_iq_phantom.py -- pilot driver for the 20260316/IQ_Phantom dataset.
+run_iq_phantom.py -- pilot driver for the IQ_Phantom dataset.
 
 One thin script: hard-code the paths, call pipeline.run_one, then run the
 CNR machinery on the returned floor/model reconstructions and save the
@@ -38,8 +38,7 @@ import numpy as np
 
 # Which DICOM to test. The MLEM_AC and MLEM_NAC folders have essentially
 # identical pixel data (see dicom investigation); pick either.
-DICOM = ("/sessions/cool-beautiful-tesla/mnt/Claude/dicom_data/"
-         "20260316/IQ_Phantom/MLEM_AC/PET.dcm")
+DICOM = ("./data/PET_MR/IQ_Phantom/MLEM_AC/PET.dcm")
 
 # Trained model checkpoint.
 CKPT = str(HERE.parent / "checkpoints_pilot" / "trial2" / "best.pt")
