@@ -14,7 +14,7 @@ from mcgpu_sss import to_host
 
 ckpt = "checkpoints_pilot/trial2/best.pt"
 XP_KW = dict(xp=xp, plane_chunk=256)
-run_dir = Path("data/run_0")
+run_dir = Path("data/run_03149")
 cfg = mpw.load_config(run_dir / "config.json")
 plot3Dimage(mpw.read_emission_image(run_dir, cfg), run_dir/"recon_img/emission.png", "Emission")
 
