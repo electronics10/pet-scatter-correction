@@ -34,12 +34,12 @@ import numpy as np
 # cold ROI inside the water insert (one of the two dark circles at k=99..103).
 
 HOT_K  = (85, 92)     # 7 axial slices in the uniform-hot middle of the phantom
-HOT_J  = (37, 44)     # 7-voxel window around phantom centroid (edit)
-HOT_I  = (32, 39)     # 7-voxel window around phantom centroid (edit)
+HOT_J  = (36, 43)     # 7-voxel window around phantom centroid (edit)
+HOT_I  = (33, 40)     # 7-voxel window around phantom centroid (edit)
 
 COLD_K = (99, 104)    # 5 axial slices inside the cold-insert end
-COLD_J = (42, 48)     # inside one of the two dark circles at k=99..103 (edit)
-COLD_I = (22, 28)     # inside one of the two dark circles at k=99..103 (edit)
+COLD_J = (40, 46)     # inside one of the two dark circles at k=99..103 (edit)
+COLD_I = (20, 26)     # inside one of the two dark circles at k=99..103 (edit)
 
 # ------------------------- run configuration -------------------------------
 

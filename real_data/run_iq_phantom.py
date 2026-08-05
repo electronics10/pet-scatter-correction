@@ -38,13 +38,14 @@ import numpy as np
 
 # Which DICOM to test. The MLEM_AC and MLEM_NAC folders have essentially
 # identical pixel data (see dicom investigation); pick either.
-DICOM = ("./data/PET_MR/IQ_Phantom/MLEM_AC/PET.dcm")
-
-# Trained model checkpoint.
-CKPT = str(HERE.parent / "checkpoints_pilot" / "trial2" / "best.pt")
+# DICOM = ("./data/PET_MR/IQ_Phantom/MLEM_AC/PET.dcm")
+DICOM = ("./data/PET_MR/Rat_Derenzo_Short_Time/700sec/MLEM_AC/PET.dcm")
 
 # Where to write outputs.
 OUT_DIR = HERE / "out" / "iq_phantom_optA"
+
+# Trained model checkpoint.
+CKPT = str(HERE.parent / "checkpoints_pilot" / "trial2" / "best.pt")
 
 # Attenuation strategy: "body_mask" (water inside PET-thresholded body) or
 # "none" (unity af). Both reconstructions in the pilot share the same af so
