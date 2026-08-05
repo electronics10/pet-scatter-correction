@@ -39,10 +39,10 @@ import numpy as np
 # Which DICOM to test. The MLEM_AC and MLEM_NAC folders have essentially
 # identical pixel data (see dicom investigation); pick either.
 # DICOM = ("./data/PET_MR/IQ_Phantom/MLEM_AC/PET.dcm")
-DICOM = ("./data/PET_MR/Rat_Derenzo_Short_Time/700sec/MLEM_AC/PET.dcm")
+DICOM = ("./data/PET_MR/Rat_Sized_Derenzo/MLEM_AC/PET.dcm")
 
 # Where to write outputs.
-OUT_DIR = HERE / "out" / "iq_phantom_optA"
+OUT_DIR = HERE / "out" / "rat_sized_derenzo_optA"
 
 # Trained model checkpoint.
 CKPT = str(HERE.parent / "checkpoints_pilot" / "trial2" / "best.pt")
