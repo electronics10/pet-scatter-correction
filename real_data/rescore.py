@@ -33,18 +33,18 @@ import numpy as np
 # Standard NEMA NU 4-2008 CNR: hot ROI inside the uniform hot region;
 # cold ROI inside the water insert (one of the two dark circles at k=99..103).
 
-HOT_K  = (74, 76)     # 7 axial slices in the uniform-hot middle of the phantom
+HOT_K  = (25, 27)     # 7 axial slices in the uniform-hot middle of the phantom
 HOT_J  = (30, 33)     # 7-voxel window around phantom centroid (edit)
 HOT_I  = (38, 41)     # 7-voxel window around phantom centroid (edit)
 
 COLD_K = (86, 88)    # 5 axial slices inside the cold-insert end
-COLD_J = (40, 46)     # inside one of the two dark circles at k=99..103 (edit)
-COLD_I = (40, 46)     # inside one of the two dark circles at k=99..103 (edit)
+COLD_J = (35, 51)     # inside one of the two dark circles at k=99..103 (edit)
+COLD_I = (25, 41)     # inside one of the two dark circles at k=99..103 (edit)
 
 # ------------------------- run configuration -------------------------------
 
-# DEFAULT_OUT_DIR = HERE / "out" / "iq_phantom_optA"
-DEFAULT_OUT_DIR = HERE / "out" / "rat_sized_derenzo_optA"
+DEFAULT_OUT_DIR = HERE / "out" / "iq_phantom_optA"
+# DEFAULT_OUT_DIR = HERE / "out" / "rat_sized_derenzo_optA"
 
 
 def main():

@@ -14,7 +14,7 @@ from mcgpu_sss import to_host
 
 ckpt = "checkpoints_pilot/trial2/best.pt"
 XP_KW = dict(xp=xp, plane_chunk=256)
-run_dir = Path("data/run_03149")
+run_dir = Path("data/run_4")
 cfg = mpw.load_config(run_dir / "config.json")
 plot3Dimage(mpw.read_emission_image(run_dir, cfg), run_dir/"recon_img/emission.png", "Emission")
 
@@ -26,8 +26,9 @@ vg = mpw.read_vox(run_dir, cfg)
 mu_per_mm = attenuation_map_from_vox(vg, MU_RHO)
 
 # --- measured data + attenuation factors -----------------------------------
-y, A, r1, r2 = from_run(run_dir, cfg, **XP_KW)                # trues
-y_s, _, _, _ = from_run(run_dir, cfg, scatter=True, **XP_KW)  # true scatter
+_, r1, r2 = mpw.read_sinogram_ring_pairs(run_dir, cfg)
+y, A = from_run(run_dir, cfg, **XP_KW)                # trues
+y_s, _ = from_run(run_dir, cfg, scatter=True, **XP_KW)  # true scatter
 y, y_s = xp.asarray(y), xp.asarray(y_s)
 y_tot = y + y_s
 sf = float(y_s.sum() / (y_tot.sum()))
